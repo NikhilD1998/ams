@@ -1,12 +1,12 @@
-import { View, Text } from 'react-native';
 import React from 'react';
-import SplashScreen from './src/screens/SplashScreen';
+import RootNavigation from './src/navigation/RootNavigation';
+import { AppProvider } from './src/context/AppContext';
 
 const App = () => {
   return (
-    <>
-      <SplashScreen />
-    </>
+    <AppProvider>
+      <RootNavigation />
+    </AppProvider>
   );
 };
 
