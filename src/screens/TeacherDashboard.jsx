@@ -25,60 +25,74 @@ const TeacherDashboard = () => {
 
   const formattedDate = date.toISOString().split('T')[0];
 
-  // Fetch students only once
+  // Fetch students and attendance for the selected date
   useEffect(() => {
-    const fetchStudents = async () => {
+    const fetchStudentsAndAttendance = async () => {
+      setLoading(true);
       try {
-        const snapshot = await firestore()
+        console.log(
+          'Fetching students and attendance for date:',
+          formattedDate,
+        );
+
+        // 1. Fetch all students (already sorted by rollNo)
+        const studentSnap = await firestore()
           .collection('students')
           .where('class', '==', '10-A')
           .get();
-        const studentList = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
+        const studentList = studentSnap.docs
+          .map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+          }))
+          .sort((a, b) => Number(a.rollNo) - Number(b.rollNo));
+        console.log('Fetched students:', studentList);
         setStudents(studentList);
-      } catch (error) {
-        Alert.alert('Error', error.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchStudents();
-  }, []);
 
-  // Fetch attendance for selected date or set default to Absent
-  useEffect(() => {
-    if (students.length === 0) return;
-    setLoading(true);
-    const fetchAttendanceForDate = async () => {
-      try {
+        // 2. Fetch all attendance docs for the selected date (collectionGroup query)
+        const attendanceSnap = await firestore()
+          .collectionGroup('attendance')
+          .where('date', '==', formattedDate)
+          .get();
+        console.log('Fetched attendance docs:', attendanceSnap.docs.length);
+
+        // 3. Map attendance by studentId
+        const attendanceMap = {};
+        attendanceSnap.docs.forEach(doc => {
+          const parent = doc.ref.parent.parent; // parent is the student doc ref
+          if (parent) {
+            attendanceMap[parent.id] = doc.data().status;
+          }
+        });
+        console.log('attendanceMap:', attendanceMap);
+
         const newAttendance = {};
         let allSubmitted = true;
-        for (const student of students) {
-          const doc = await firestore()
-            .collection('students')
-            .doc(student.id)
-            .collection('attendance')
-            .doc(formattedDate)
-            .get();
-          if (doc.exists && doc.data() && doc.data().status) {
-            newAttendance[student.id] = doc.data().status;
+        studentList.forEach(student => {
+          if (attendanceMap[student.id]) {
+            newAttendance[student.id] = attendanceMap[student.id];
           } else {
             newAttendance[student.id] = 'Absent';
             allSubmitted = false;
           }
-        }
+        });
         setAttendance(newAttendance);
         setSubmitted(allSubmitted);
+        console.log(
+          'Attendance state set:',
+          newAttendance,
+          'All submitted:',
+          allSubmitted,
+        );
       } catch (error) {
+        console.log('Error in fetchStudentsAndAttendance:', error);
         Alert.alert('Error', error.message);
       } finally {
         setLoading(false);
       }
     };
-    fetchAttendanceForDate();
-  }, [students, formattedDate]);
+    fetchStudentsAndAttendance();
+  }, [formattedDate]);
 
   const markStatus = async (studentId, status) => {
     if (submitted) return;
