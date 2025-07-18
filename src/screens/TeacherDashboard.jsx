@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -12,10 +12,12 @@ import {
 } from 'react-native';
 import firestore from '@react-native-firebase/firestore';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { AppContext } from '../context/AppContext';
 
 const STATUS = ['Present', 'Absent', 'Late'];
 
 const TeacherDashboard = () => {
+  const { fetchStudentsAndAttendance } = useContext(AppContext);
   const [students, setStudents] = useState([]);
   const [attendance, setAttendance] = useState({});
   const [submitted, setSubmitted] = useState(false);
@@ -25,9 +27,8 @@ const TeacherDashboard = () => {
 
   const formattedDate = date.toISOString().split('T')[0];
 
-  // Fetch students and attendance for the selected date
   useEffect(() => {
-    const fetchStudentsAndAttendance = async () => {
+    const fetchStudentsAndAttendanceData = async () => {
       setLoading(true);
       try {
         console.log(
@@ -35,52 +36,16 @@ const TeacherDashboard = () => {
           formattedDate,
         );
 
-        // 1. Fetch all students (already sorted by rollNo)
-        const studentSnap = await firestore()
-          .collection('students')
-          .where('class', '==', '10-A')
-          .get();
-        const studentList = studentSnap.docs
-          .map(doc => ({
-            id: doc.id,
-            ...doc.data(),
-          }))
-          .sort((a, b) => Number(a.rollNo) - Number(b.rollNo));
-        console.log('Fetched students:', studentList);
-        setStudents(studentList);
+        const { students, attendance, allSubmitted } =
+          await fetchStudentsAndAttendance('10-A', formattedDate);
 
-        // 2. Fetch all attendance docs for the selected date (collectionGroup query)
-        const attendanceSnap = await firestore()
-          .collectionGroup('attendance')
-          .where('date', '==', formattedDate)
-          .get();
-        console.log('Fetched attendance docs:', attendanceSnap.docs.length);
-
-        // 3. Map attendance by studentId
-        const attendanceMap = {};
-        attendanceSnap.docs.forEach(doc => {
-          const parent = doc.ref.parent.parent; // parent is the student doc ref
-          if (parent) {
-            attendanceMap[parent.id] = doc.data().status;
-          }
-        });
-        console.log('attendanceMap:', attendanceMap);
-
-        const newAttendance = {};
-        let allSubmitted = true;
-        studentList.forEach(student => {
-          if (attendanceMap[student.id]) {
-            newAttendance[student.id] = attendanceMap[student.id];
-          } else {
-            newAttendance[student.id] = 'Absent';
-            allSubmitted = false;
-          }
-        });
-        setAttendance(newAttendance);
+        setStudents(students);
+        setAttendance(attendance);
         setSubmitted(allSubmitted);
+
         console.log(
           'Attendance state set:',
-          newAttendance,
+          attendance,
           'All submitted:',
           allSubmitted,
         );
@@ -91,7 +56,7 @@ const TeacherDashboard = () => {
         setLoading(false);
       }
     };
-    fetchStudentsAndAttendance();
+    fetchStudentsAndAttendanceData();
   }, [formattedDate]);
 
   const markStatus = async (studentId, status) => {
@@ -257,6 +222,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: 'bold',
+    marginTop: 16,
     marginBottom: 8,
     textAlign: 'center',
   },
