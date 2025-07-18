@@ -1,18 +1,55 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
+import React, { useState, useContext } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  Button,
+  StyleSheet,
+  Alert,
+  ActivityIndicator,
+} from 'react-native';
+import auth from '@react-native-firebase/auth';
+import { AppContext } from '../context/AppContext';
 
-const LoginScreen = ({ navigation }) => {
+const LoginScreen = ({ navigation, route }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const { login } = useContext(AppContext);
 
-  const handleLogin = () => {
-    console.log('Email:', email);
-    console.log('Password:', password);
+  const role = route?.params?.role;
+
+  const handleLogin = async () => {
+    setLoading(true);
+    try {
+      const userCredential = await auth().signInWithEmailAndPassword(
+        email,
+        password,
+      );
+      login({ ...userCredential.user, role });
+
+      if (role === 'teacher') {
+        navigation.replace('TeacherDashboard');
+      } else if (role === 'student') {
+        navigation.replace('StudentDashboard');
+      } else if (role === 'parent') {
+        navigation.replace('ParentDashboard');
+      }
+    } catch (error) {
+      Alert.alert('Login Failed', error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Login</Text>
+      {role && (
+        <Text style={{ textAlign: 'center', marginBottom: 16 }}>
+          Logging in as: <Text style={{ fontWeight: 'bold' }}>{role}</Text>
+        </Text>
+      )}
       <TextInput
         style={styles.input}
         placeholder="Email"
@@ -28,7 +65,15 @@ const LoginScreen = ({ navigation }) => {
         onChangeText={setPassword}
         secureTextEntry
       />
-      <Button title="Login" onPress={handleLogin} />
+      {loading ? (
+        <ActivityIndicator
+          size="large"
+          color="#1976D2"
+          style={{ marginTop: 16 }}
+        />
+      ) : (
+        <Button title="Login" onPress={handleLogin} />
+      )}
     </View>
   );
 };

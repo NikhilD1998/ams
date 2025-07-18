@@ -5,6 +5,9 @@ import { createStackNavigator } from '@react-navigation/stack';
 import SplashScreen from '../screens/SplashScreen';
 import LoginScreen from '../screens/LoginScreen';
 import UserSelectionScreen from '../screens/UserSelectionScreen';
+import StudentDashboard from '../screens/StudentDashboard';
+import TeacherDashboard from '../screens/TeacherDashboard';
+import ParentDashboard from '../screens/ParentDashboard';
 
 const Stack = createStackNavigator();
 
@@ -25,6 +28,21 @@ const RootNavigation = () => {
         <Stack.Screen
           name="LoginScreen"
           component={LoginScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="StudentDashboard"
+          component={StudentDashboard}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="TeacherDashboard"
+          component={TeacherDashboard}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="ParentDashboard"
+          component={ParentDashboard}
           options={{ headerShown: false }}
         />
       </Stack.Navigator>
