@@ -1,12 +1,12 @@
 import { View, Text } from 'react-native';
 import React from 'react';
 
-const StudentDashboard = () => {
+const AdminDashboard = () => {
   return (
     <View>
-      <Text>StudentDashboard</Text>
+      <Text>AdminDashboard</Text>
     </View>
   );
 };
 
-export default StudentDashboard;
+export default AdminDashboard;

@@ -19,9 +19,9 @@ const UserSelectionScreen = ({ navigation }) => {
       </TouchableOpacity>
       <TouchableOpacity
         style={styles.button}
-        onPress={() => navigation.navigate('LoginScreen', { role: 'student' })}
+        onPress={() => navigation.navigate('LoginScreen', { role: 'admin' })}
       >
-        <Text style={styles.buttonText}>Student</Text>
+        <Text style={styles.buttonText}>Admin</Text>
       </TouchableOpacity>
     </View>
   );

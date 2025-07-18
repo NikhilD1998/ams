@@ -30,8 +30,8 @@ const LoginScreen = ({ navigation, route }) => {
 
       if (role === 'teacher') {
         navigation.replace('TeacherDashboard');
-      } else if (role === 'student') {
-        navigation.replace('StudentDashboard');
+      } else if (role === 'admin') {
+        navigation.replace('AdminDashboard');
       } else if (role === 'parent') {
         navigation.replace('ParentDashboard');
       }
