@@ -26,6 +26,21 @@ const LoginScreen = ({ navigation, route }) => {
         email,
         password,
       );
+      const userEmail = userCredential.user.email;
+
+      if (
+        (role === 'teacher' && userEmail !== 'teacher@school.com') ||
+        (role === 'parent' && userEmail !== 'parent@school.com') ||
+        (role === 'admin' && userEmail !== 'admin@school.com')
+      ) {
+        Alert.alert(
+          'Access Denied',
+          'You are not authorized to access this role with these credentials.',
+        );
+        setLoading(false);
+        return;
+      }
+
       login({ ...userCredential.user, role });
 
       if (role === 'teacher') {
