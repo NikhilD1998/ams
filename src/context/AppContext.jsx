@@ -62,9 +62,57 @@ export const AppProvider = ({ children }) => {
     };
   };
 
+  const fetchParentStudentAndAttendance = async parentEmail => {
+    // 1. Find the student linked to this parent
+    const studentSnap = await firestore()
+      .collection('students')
+      .where('parent.email', '==', parentEmail)
+      .limit(1)
+      .get();
+    if (studentSnap.empty)
+      return { student: null, monthPercent: null, attendanceList: [] };
+    const studentDoc = studentSnap.docs[0];
+    const student = { id: studentDoc.id, ...studentDoc.data() };
+
+    // 2. Fetch all attendance for current month
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const monthStartStr = monthStart.toISOString().split('T')[0];
+
+    const attendanceSnap = await firestore()
+      .collection('students')
+      .doc(studentDoc.id)
+      .collection('attendance')
+      .where('date', '>=', monthStartStr)
+      .get();
+
+    const allAttendance = attendanceSnap.docs.map(doc => doc.data());
+
+    // 3. Calculate percentage for current month
+    const presentCount = allAttendance.filter(
+      a => a.status === 'Present',
+    ).length;
+    const totalCount = allAttendance.length;
+    const monthPercent =
+      totalCount > 0 ? Math.round((presentCount / totalCount) * 100) : 0;
+
+    // 4. Get last 7 days attendance (sorted descending by date)
+    const attendanceList = allAttendance
+      .sort((a, b) => b.date.localeCompare(a.date))
+      .slice(0, 7);
+
+    return { student, monthPercent, attendanceList };
+  };
+
   return (
     <AppContext.Provider
-      value={{ user, login, logout, fetchStudentsAndAttendance }}
+      value={{
+        user,
+        login,
+        logout,
+        fetchStudentsAndAttendance,
+        fetchParentStudentAndAttendance,
+      }}
     >
       {children}
     </AppContext.Provider>
