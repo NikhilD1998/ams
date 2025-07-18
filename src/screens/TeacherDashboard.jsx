@@ -16,8 +16,8 @@ import { AppContext } from '../context/AppContext';
 
 const STATUS = ['Present', 'Absent', 'Late'];
 
-const TeacherDashboard = () => {
-  const { fetchStudentsAndAttendance } = useContext(AppContext);
+const TeacherDashboard = ({ navigation }) => {
+  const { fetchStudentsAndAttendance, logout, user } = useContext(AppContext);
   const [students, setStudents] = useState([]);
   const [attendance, setAttendance] = useState({});
   const [submitted, setSubmitted] = useState(false);
@@ -26,6 +26,19 @@ const TeacherDashboard = () => {
   const [showDatePicker, setShowDatePicker] = useState(false);
 
   const formattedDate = date.toISOString().split('T')[0];
+
+  useEffect(() => {
+    if (navigation) {
+      navigation.setOptions({ headerLeft: () => null, gestureEnabled: false });
+      const unsubscribe = navigation.addListener('beforeRemove', e => {
+        // Only prevent back actions, not all navigation
+        if (e.data.action.type === 'GO_BACK') {
+          e.preventDefault();
+        }
+      });
+      return unsubscribe;
+    }
+  }, [navigation]);
 
   useEffect(() => {
     const fetchStudentsAndAttendanceData = async () => {
@@ -162,6 +175,13 @@ const TeacherDashboard = () => {
     </View>
   );
 
+  useEffect(() => {
+    console.log('User state changed:', user);
+    if (user === null) {
+      navigation.replace('UserSelectionScreen');
+    }
+  }, [user, navigation]);
+
   if (loading) {
     return (
       <View
@@ -178,7 +198,17 @@ const TeacherDashboard = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Class 10-A</Text>
+      <View style={styles.classRow}>
+        <Text style={styles.title}>Class 10-A</Text>
+        <TouchableOpacity
+          onPress={() => {
+            console.log('Logout button pressed');
+            logout();
+          }}
+        >
+          <Text style={styles.logoutText}>Logout</Text>
+        </TouchableOpacity>
+      </View>
       <Text style={styles.subtitle}>Total Students: {students.length}</Text>
       <TouchableOpacity
         style={styles.dateBtn}
@@ -219,12 +249,23 @@ const TeacherDashboard = () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16, backgroundColor: '#fff' },
+  classRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 16,
+    marginBottom: 8,
+  },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginTop: 16,
-    marginBottom: 8,
-    textAlign: 'center',
+    textAlign: 'left',
+  },
+  logoutText: {
+    color: '#1976D2',
+    fontWeight: 'bold',
+    fontSize: 16,
+    padding: 8,
   },
   subtitle: { fontSize: 16, marginBottom: 16, textAlign: 'center' },
   studentRow: {

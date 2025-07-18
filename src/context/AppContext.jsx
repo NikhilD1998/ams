@@ -11,10 +11,10 @@ export const AppProvider = ({ children }) => {
   };
 
   const logout = () => {
+    console.log('AppContext: logout called');
     setUser(null);
   };
 
-  // Fetch students and attendance for a given class and date
   const fetchStudentsAndAttendance = async (className, formattedDate) => {
     // 1. Fetch students
     const studentSnap = await firestore()
