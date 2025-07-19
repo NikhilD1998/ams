@@ -96,6 +96,46 @@ export const AppProvider = ({ children }) => {
     return { student, monthPercent, attendanceList };
   };
 
+  const fetchAdminAttendanceSummary = async dateStr => {
+    const todayStr = dateStr || new Date().toISOString().split('T')[0];
+
+    const attendanceSnap = await firestore()
+      .collection('attendance')
+      .where('date', '==', todayStr)
+      .limit(1)
+      .get();
+
+    if (attendanceSnap.empty) {
+      return {
+        summary: { Present: 0, Absent: 0, Late: 0 },
+        absentList: [],
+      };
+    }
+
+    const attendanceDoc = attendanceSnap.docs[0].data();
+    const records = attendanceDoc.records || [];
+
+    let present = 0,
+      absent = 0,
+      late = 0;
+    let absentStudents = [];
+
+    records.forEach(record => {
+      if (record.status === 'Present') present++;
+      else if (record.status === 'Late') late++;
+      else if (record.status === 'Absent') absent++;
+
+      if (record.status === 'Absent') {
+        absentStudents.push(record);
+      }
+    });
+
+    return {
+      summary: { Present: present, Absent: absent, Late: late },
+      absentList: absentStudents,
+    };
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -104,6 +144,7 @@ export const AppProvider = ({ children }) => {
         logout,
         fetchStudentsAndAttendance,
         fetchParentStudentAndAttendance,
+        fetchAdminAttendanceSummary,
       }}
     >
       {children}

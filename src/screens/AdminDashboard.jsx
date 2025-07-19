@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import React, { useEffect, useState, useContext } from 'react';
-import firestore from '@react-native-firebase/firestore';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppContext } from '../context/AppContext';
 
@@ -16,7 +15,7 @@ const AdminDashboard = ({ navigation }) => {
   const [absentList, setAbsentList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [today, setToday] = useState(new Date().toISOString().split('T')[0]);
-  const { logout, user } = useContext(AppContext);
+  const { logout, user, fetchAdminAttendanceSummary } = useContext(AppContext);
 
   useEffect(() => {
     if (typeof user !== 'undefined' && user === null && navigation) {
@@ -26,50 +25,21 @@ const AdminDashboard = ({ navigation }) => {
   }, [user, navigation]);
 
   useEffect(() => {
-    const fetchAttendanceSummary = async () => {
+    const fetchSummary = async () => {
       setLoading(true);
       const todayStr = new Date().toISOString().split('T')[0];
       setToday(todayStr);
 
-      const attendanceSnap = await firestore()
-        .collection('attendance')
-        .where('date', '==', todayStr)
-        .limit(1)
-        .get();
-
-      if (attendanceSnap.empty) {
-        setSummary({ Present: 0, Absent: 0, Late: 0 });
-        setAbsentList([]);
-        setLoading(false);
-        return;
-      }
-
-      const attendanceDoc = attendanceSnap.docs[0].data();
-      const records = attendanceDoc.records || [];
-      console.log('Attendance records:', records);
-
-      let present = 0,
-        absent = 0,
-        late = 0;
-      let absentStudents = [];
-
-      records.forEach(record => {
-        if (record.status === 'Present') present++;
-        else if (record.status === 'Late') late++;
-        else if (record.status === 'Absent') absent++;
-
-        if (record.status === 'Absent') {
-          absentStudents.push(record);
-        }
-      });
-
-      setSummary({ Present: present, Absent: absent, Late: late });
-      setAbsentList(absentStudents);
+      const { summary, absentList } = await fetchAdminAttendanceSummary(
+        todayStr,
+      );
+      setSummary(summary);
+      setAbsentList(absentList);
       setLoading(false);
     };
 
-    fetchAttendanceSummary();
-  }, []);
+    fetchSummary();
+  }, [fetchAdminAttendanceSummary]);
 
   return (
     <SafeAreaView style={styles.container}>
