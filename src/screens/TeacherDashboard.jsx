@@ -13,6 +13,7 @@ import {
 import firestore from '@react-native-firebase/firestore';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { AppContext } from '../context/AppContext';
+import functions from '@react-native-firebase/functions';
 
 const STATUS = ['Present', 'Absent', 'Late'];
 
@@ -87,6 +88,21 @@ const TeacherDashboard = ({ navigation }) => {
           date: formattedDate,
           markedAt: firestore.FieldValue.serverTimestamp(),
         });
+
+      if (status === 'Absent') {
+        const student = students.find(s => s.id === studentId);
+        console.log('Absent student:', student);
+        try {
+          await functions().httpsCallable('notifyParentOnAbsent')({
+            studentId,
+            studentName: student.name,
+            date: formattedDate,
+          });
+          console.log('FCM notification sent to parent');
+        } catch (err) {
+          console.log('FCM notification error:', err);
+        }
+      }
     } catch (error) {
       Alert.alert(
         'Error',

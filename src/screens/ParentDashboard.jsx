@@ -9,6 +9,8 @@ import {
 import React, { useEffect, useState, useContext } from 'react';
 import { AppContext } from '../context/AppContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import messaging from '@react-native-firebase/messaging';
+import firestore from '@react-native-firebase/firestore';
 
 const PARENT_EMAIL = 'parent@school.com';
 
@@ -29,6 +31,17 @@ const ParentDashboard = ({ navigation }) => {
       setMonthPercent(monthPercent);
       setAttendanceList(attendanceList);
       setLoading(false);
+
+      // Request notification permission before getting token
+      try {
+        await messaging().requestPermission();
+        if (student && student.id) {
+          await saveParentFcmToken(student.id);
+          console.log('Parent FCM token saved');
+        }
+      } catch (err) {
+        console.log('Error requesting FCM permission or saving token:', err);
+      }
     };
     fetchData();
   }, []);
@@ -46,6 +59,14 @@ const ParentDashboard = ({ navigation }) => {
       navigation.replace('UserSelectionScreen');
     }
   }, [user, navigation]);
+
+  // Call this after parent login
+  const saveParentFcmToken = async studentId => {
+    const token = await messaging().getToken();
+    await firestore().collection('students').doc(studentId).update({
+      'parent.fcmToken': token,
+    });
+  };
 
   if (loading) {
     return (

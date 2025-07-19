@@ -15,11 +15,27 @@ const LoginScreen = ({ navigation, route }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [formError, setFormError] = useState('');
   const { login } = useContext(AppContext);
 
   const role = route?.params?.role;
 
+  const validateForm = () => {
+    if (!email.trim() || !password.trim()) {
+      setFormError('Email and password are required.');
+      return false;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      setFormError('Please enter a valid email address.');
+      return false;
+    }
+    setFormError('');
+    return true;
+  };
+
   const handleLogin = async () => {
+    if (!validateForm()) return;
     setLoading(true);
     try {
       const userCredential = await auth().signInWithEmailAndPassword(
@@ -51,7 +67,15 @@ const LoginScreen = ({ navigation, route }) => {
         navigation.replace('ParentDashboard');
       }
     } catch (error) {
-      Alert.alert('Login Failed', error.message);
+      if (error.code === 'auth/user-not-found') {
+        setFormError('No user found with this email.');
+      } else if (error.code === 'auth/wrong-password') {
+        setFormError('Incorrect password.');
+      } else if (error.code === 'auth/invalid-email') {
+        setFormError('Invalid email address.');
+      } else {
+        setFormError(error.message);
+      }
     } finally {
       setLoading(false);
     }
@@ -65,6 +89,11 @@ const LoginScreen = ({ navigation, route }) => {
           Logging in as: <Text style={{ fontWeight: 'bold' }}>{role}</Text>
         </Text>
       )}
+      {formError ? (
+        <Text style={{ color: 'red', marginBottom: 12, textAlign: 'center' }}>
+          {formError}
+        </Text>
+      ) : null}
       <TextInput
         style={styles.input}
         placeholder="Email"
