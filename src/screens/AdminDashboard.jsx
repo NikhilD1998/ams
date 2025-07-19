@@ -4,16 +4,26 @@ import {
   StyleSheet,
   FlatList,
   ActivityIndicator,
+  TouchableOpacity,
 } from 'react-native';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import firestore from '@react-native-firebase/firestore';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { AppContext } from '../context/AppContext';
 
-const AdminDashboard = () => {
+const AdminDashboard = ({ navigation }) => {
   const [summary, setSummary] = useState({ Present: 0, Absent: 0, Late: 0 });
   const [absentList, setAbsentList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [today, setToday] = useState(new Date().toISOString().split('T')[0]);
+  const { logout, user } = useContext(AppContext);
+
+  useEffect(() => {
+    if (typeof user !== 'undefined' && user === null && navigation) {
+      console.log('Navigating to UserSelectionScreen after logout');
+      navigation.replace('UserSelectionScreen');
+    }
+  }, [user, navigation]);
 
   useEffect(() => {
     const fetchAttendanceSummary = async () => {
@@ -63,48 +73,55 @@ const AdminDashboard = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View>
-        <Text style={styles.header}>
-          Today's Attendance Summary (Class 10-A)
-        </Text>
-        <Text style={styles.dateText}>Date: {today}</Text>
-        {loading ? (
-          <View style={{ alignItems: 'center', marginTop: 32 }}>
-            <ActivityIndicator size="large" color="#1976D2" />
-            <Text style={{ marginTop: 16 }}>Loading attendance...</Text>
-          </View>
-        ) : (
-          <>
-            <Text style={styles.summary}>
-              Present:{' '}
-              <Text style={{ color: '#4CAF50' }}>{summary.Present}</Text> {'  '}
-              Absent: <Text style={{ color: '#F44336' }}>
-                {summary.Absent}
-              </Text>{' '}
-              {'  '}
-              Late: <Text style={{ color: '#FFEB3B' }}>{summary.Late}</Text>
-            </Text>
-            <Text style={styles.subHeader}>Absent Students:</Text>
-            {absentList.length === 0 ? (
-              <Text style={styles.none}>None</Text>
-            ) : (
-              <FlatList
-                data={absentList}
-                keyExtractor={item =>
-                  item.studentId?.toString() ||
-                  item.rollNo?.toString() ||
-                  Math.random().toString()
-                }
-                renderItem={({ item }) => (
-                  <Text style={styles.student}>
-                    {item.rollNo}. {item.name}
-                  </Text>
-                )}
-              />
-            )}
-          </>
-        )}
+      <View style={styles.classRow}>
+        <Text style={styles.header}>Attendance Summary (Class 10-A)</Text>
+        <TouchableOpacity
+          onPress={() => {
+            console.log('Logout button pressed');
+            logout();
+            navigation.replace('UserSelectionScreen');
+          }}
+        >
+          <Text style={styles.logoutText}>Logout</Text>
+        </TouchableOpacity>
       </View>
+      <Text style={styles.dateText}>Date: {today}</Text>
+      {loading ? (
+        <View style={{ alignItems: 'center', marginTop: 32 }}>
+          <ActivityIndicator size="large" color="#1976D2" />
+          <Text style={{ marginTop: 16 }}>Loading attendance...</Text>
+        </View>
+      ) : (
+        <>
+          <Text style={styles.summary}>
+            Present: <Text style={{ color: '#4CAF50' }}>{summary.Present}</Text>{' '}
+            {'  '}
+            Absent: <Text style={{ color: '#F44336' }}>
+              {summary.Absent}
+            </Text>{' '}
+            {'  '}
+            Late: <Text style={{ color: '#FFEB3B' }}>{summary.Late}</Text>
+          </Text>
+          <Text style={styles.subHeader}>Absent Students:</Text>
+          {absentList.length === 0 ? (
+            <Text style={styles.none}>None</Text>
+          ) : (
+            <FlatList
+              data={absentList}
+              keyExtractor={item =>
+                item.studentId?.toString() ||
+                item.rollNo?.toString() ||
+                Math.random().toString()
+              }
+              renderItem={({ item }) => (
+                <Text style={styles.student}>
+                  {item.rollNo}. {item.name}
+                </Text>
+              )}
+            />
+          )}
+        </>
+      )}
     </SafeAreaView>
   );
 };
@@ -128,6 +145,17 @@ const styles = StyleSheet.create({
   student: { fontSize: 16, marginBottom: 4 },
   loading: { textAlign: 'center', marginTop: 32 },
   none: { fontSize: 16, color: '#888', textAlign: 'center' },
+  classRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  logoutText: {
+    fontSize: 16,
+    color: '#1976D2',
+    fontWeight: 'bold',
+  },
 });
 
 export default AdminDashboard;
