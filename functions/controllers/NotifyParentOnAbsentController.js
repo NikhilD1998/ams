@@ -5,7 +5,6 @@ admin.initializeApp();
 exports.notifyParentOnAbsent = functions.https.onCall(async (data, context) => {
   console.log('notifyParentOnAbsent called with:', data);
 
-  // Fix: get values from data.data
   const { studentId, studentName, date } = data.data || {};
 
   if (!studentId) {

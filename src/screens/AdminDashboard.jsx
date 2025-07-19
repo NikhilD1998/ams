@@ -21,7 +21,6 @@ const AdminDashboard = () => {
       const todayStr = new Date().toISOString().split('T')[0];
       setToday(todayStr);
 
-      // Query attendance collection for today's date
       const attendanceSnap = await firestore()
         .collection('attendance')
         .where('date', '==', todayStr)

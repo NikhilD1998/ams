@@ -32,7 +32,6 @@ const TeacherDashboard = ({ navigation }) => {
     if (navigation) {
       navigation.setOptions({ headerLeft: () => null, gestureEnabled: false });
       const unsubscribe = navigation.addListener('beforeRemove', e => {
-        // Only prevent back actions, not all navigation
         if (e.data.action.type === 'GO_BACK') {
           e.preventDefault();
         }

@@ -32,7 +32,6 @@ const ParentDashboard = ({ navigation }) => {
       setAttendanceList(attendanceList);
       setLoading(false);
 
-      // Request notification permission before getting token
       try {
         await messaging().requestPermission();
         if (student && student.id) {
@@ -60,7 +59,6 @@ const ParentDashboard = ({ navigation }) => {
     }
   }, [user, navigation]);
 
-  // Call this after parent login
   const saveParentFcmToken = async studentId => {
     const token = await messaging().getToken();
     await firestore().collection('students').doc(studentId).update({

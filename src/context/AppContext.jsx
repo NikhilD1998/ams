@@ -16,7 +16,6 @@ export const AppProvider = ({ children }) => {
   };
 
   const fetchStudentsAndAttendance = async (className, formattedDate) => {
-    // 1. Fetch students
     const studentSnap = await firestore()
       .collection('students')
       .where('class', '==', className)
@@ -28,13 +27,11 @@ export const AppProvider = ({ children }) => {
       }))
       .sort((a, b) => Number(a.rollNo) - Number(b.rollNo));
 
-    // 2. Fetch attendance docs for the date
     const attendanceSnap = await firestore()
       .collectionGroup('attendance')
       .where('date', '==', formattedDate)
       .get();
 
-    // 3. Map attendance by studentId
     const attendanceMap = {};
     attendanceSnap.docs.forEach(doc => {
       const parent = doc.ref.parent.parent;
@@ -43,7 +40,6 @@ export const AppProvider = ({ children }) => {
       }
     });
 
-    // 4. Merge: set attendance state, default to 'Absent'
     const newAttendance = {};
     let allSubmitted = true;
     studentList.forEach(student => {
@@ -63,7 +59,6 @@ export const AppProvider = ({ children }) => {
   };
 
   const fetchParentStudentAndAttendance = async parentEmail => {
-    // 1. Find the student linked to this parent
     const studentSnap = await firestore()
       .collection('students')
       .where('parent.email', '==', parentEmail)
@@ -74,7 +69,6 @@ export const AppProvider = ({ children }) => {
     const studentDoc = studentSnap.docs[0];
     const student = { id: studentDoc.id, ...studentDoc.data() };
 
-    // 2. Fetch all attendance for current month
     const now = new Date();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
     const monthStartStr = monthStart.toISOString().split('T')[0];
@@ -88,7 +82,6 @@ export const AppProvider = ({ children }) => {
 
     const allAttendance = attendanceSnap.docs.map(doc => doc.data());
 
-    // 3. Calculate percentage for current month
     const presentCount = allAttendance.filter(
       a => a.status === 'Present',
     ).length;
@@ -96,7 +89,6 @@ export const AppProvider = ({ children }) => {
     const monthPercent =
       totalCount > 0 ? Math.round((presentCount / totalCount) * 100) : 0;
 
-    // 4. Get last 7 days attendance (sorted descending by date)
     const attendanceList = allAttendance
       .sort((a, b) => b.date.localeCompare(a.date))
       .slice(0, 7);
